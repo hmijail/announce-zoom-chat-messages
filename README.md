@@ -5,13 +5,15 @@
 Have you ever missed messages during a Zoom call? Do you wish Zoom made some noise when new messages appear?
 If so, you're lucky! This is a JavaScript For Automation (JXA) script that once per second checks the contents of your Zoom chat window, and beeps and displays a notification whenever new text appears.
 
-Note that this is only for the chat window that can be accessed **during a Zoom call**. This is not for the independent chat functionality in Zoom.
+Note that this is only for the chat window that is available **during a Zoom call**. This is not for the call-independent chat functionality in Zoom.
 
-## What is JXA?
+### What is JXA?
 
 It's a way to write "AppleScripts" in JavaScript. It comes included with every MacOS since 10.10. (Long before we also had AppleScript proper, but it's time to move to JavaScript)
 
-# How do I run it?
+And what is AppleScript? It's Apple's secret weapon for world domination, always was (since long before Mac OS X), and looks like it will always be. Until it gets starved to death. *Sigh*.
+
+## How do I run it?
 
 First you need to compile it. Afterwards you will be able to run it with a double click, like any normal app.
 
@@ -44,12 +46,14 @@ If you don't have a Zoom chat window open it will remind you to open it. From th
 
 ## Why is this distributed in this way?
 Because it's the easiest / quickest (for me ;P).
-More detail:
+
+More concretely:
   * `osacompile` creates an app which somehow has problems with the System Events/Accessibility framework.
-  * Publishing the whole app bundle would add obscure files that are harder to trust than plain code.
+  * Committing to the repo the whole app bundle would add obscure files that are harder to trust than plain code.
   * Publishing a compiled app would need me to sign it.
 
 ## I would like it to do something different!
 It's easy to customize, but feel free to open an issue and maybe I or someone else will look into it.
 
-
+## Disclaimer for plausible denial
+This is the longest JavaScript I have ever written, and I did so in the sucky environment of Script Editor. Works For Me (TM). Caveat emptor.
