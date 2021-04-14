@@ -2,24 +2,28 @@ currApp = Application.currentApplication()
 currApp.includeStandardAdditions = true
 
 SE = Application('System Events')
-SE.strictPropertyScope = true
-SE.strictCommandScope = true
 SE.includeStandardAdditions = true
 
 past_length = undefined
 dormant = false
-
-//get_chat_length()
+ZoomApp = SE.applicationProcesses.byName("zoom.us")
 
 function is_meeting_ongoing() {
- return (SE.applicationProcesses.byName("zoom.us").windows.whose({ name: { _contains: 'Zoom Meeting' } }).length == 1)
+	// the window "Zoom meeting" isn't reported if it's in a non-active Mission Control "Space"
+	// so let's check whether Zoom's Window menu contains a "Zoom Meeting" menuItem
+	try {
+		ZoomApp.menuBars()[0].menuBarItems.byName("Window").menus.byName("Window").menuItems.byName("Zoom Meeting")()
+	} catch (error) {
+		return false
+	}
+	return true
 }
 
 function get_chat_length(){
 	// returns the number of lines in chat (including the name lines!)
 
     // get content of detached chat window
-    zwc = SE.applicationProcesses.byName("zoom.us").windows.whose({ name: { _contains: 'Chat' } })
+    zwc = ZoomApp.windows.whose({ name: { _contains: 'Chat' } })
 	if (zwc.length == 1) {
 		// there is a chat window
     	zwcs = zwc.splitterGroups.at(0)
@@ -30,7 +34,7 @@ function get_chat_length(){
     }
 
     // get content of attached chat window
-    zwc2 = SE.applicationProcesses.byName("zoom.us").windows.whose({ name: { _contains: 'Zoom Meeting' } })
+    zwc2 = ZoomApp.windows.whose({ name: { _contains: 'Zoom Meeting' } })
 
     sidepanel = zwc2.splitterGroups[0]
 	chat_embedded = sidepanel.splitterGroups[0]
