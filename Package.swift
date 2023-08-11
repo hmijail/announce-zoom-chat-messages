@@ -7,6 +7,7 @@ let package = Package(
     name: "zoom-chat-event-publisher",
     platforms: [.macOS(.v10_13)],
     dependencies: [
+        .package(url: "https://github.com/adorkable/swift-log-format-and-pipe.git", exact: "0.1.1"),
         .package(url: "https://github.com/apple/swift-argument-parser", exact: "1.2.2"),
         .package(url: "https://github.com/apple/swift-log.git", exact: "1.5.2"),
         .package(url: "https://github.com/ReactiveX/RxSwift.git", exact: "6.6.0"),
@@ -19,6 +20,7 @@ let package = Package(
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "Logging", package: "swift-log"),
+                .product(name: "LoggingFormatAndPipe", package: "swift-log-format-and-pipe"),
                 .product(name: "RxCocoa", package: "RxSwift"),
                 .product(name: "RxSwift", package: "RxSwift"),
             ],

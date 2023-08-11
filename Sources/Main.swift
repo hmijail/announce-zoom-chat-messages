@@ -1,5 +1,7 @@
 import ArgumentParser
 import Foundation
+import Logging
+import LoggingFormatAndPipe
 
 @main
 struct Main: ParsableCommand {
@@ -7,6 +9,12 @@ struct Main: ParsableCommand {
     var destinationURL: URLComponents
     
     func run() {
+        LoggingSystem.bootstrap { _ in
+            LoggingFormatAndPipe.Handler(
+                formatter: BasicFormatter.apple,
+                pipe: LoggerTextOutputStreamPipe.standardOutput
+            )
+        }
         let publisher: ZoomChatEventPublisher = ZoomChatEventPublisher(
             destinationURL: destinationURL
         )

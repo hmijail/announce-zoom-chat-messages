@@ -26,6 +26,15 @@
         "revision" : "32e8d724467f8fe623624570367e3d50c5638e46",
         "version" : "1.5.2"
       }
+    },
+    {
+      "identity" : "swift-log-format-and-pipe",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/adorkable/swift-log-format-and-pipe.git",
+      "state" : {
+        "revision" : "bd29badb9e6b18122ec10b84eed534db83cad279",
+        "version" : "0.1.1"
+      }
     }
   ],
   "version" : 2

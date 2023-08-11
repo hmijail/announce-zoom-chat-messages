@@ -127,21 +127,47 @@ struct ZoomChatEventPublisher {
                     URLQueryItem(name: "text", value: $0.text)
                 ]
                 guard let url = urlComps.url else {
-                    return Observable<HTTPURLResponse>.empty()
+                    return Observable<Result<HTTPURLResponse, Error>>.never()
                 }
                 var urlRequest: URLRequest = URLRequest(url: url)
                 urlRequest.httpMethod = "POST"
                 
-                return urlSession.rx.response(request: urlRequest).map { $0.response }
+                return urlSession.rx.response(request: urlRequest)
+                    .map { .success($0.response) }
+                    .retry { errors in
+                        // Retry with delay, inspired by:
+                        // https://github.com/ReactiveX/RxSwift/issues/689#issuecomment-595117647
+                        let maxAttempts: Int = 3
+                        let delay: DispatchTimeInterval = .seconds(2)
+                        
+                        return errors.enumerated().flatMap { (index, error) -> Observable<Int> in
+                            index <= maxAttempts
+                            ? Observable<Int>.timer(delay, scheduler: scheduler)
+                            : Observable.error(error)
+                        }
+                    }
+                    .catch { Observable.of(.failure($0)) }
             }
             .subscribe(
-                onNext: { response in
-                    let statusCode: Int = response.statusCode
-                    response.url.map { url in
-                        if statusCode == 204 {
-                            log.info("Successfully POSTed to \(url)")
-                        } else {
-                            log.warning("Failed POSTing to \(url) with \(statusCode)")
+                onNext: { responseResult in
+                    switch responseResult {
+                    case .success(let response):
+                        let statusCode: Int = response.statusCode
+                        response.url.map { url in
+                            if statusCode == 204 {
+                                log.info("POSTed to \(url)")
+                            } else {
+                                log.warning("Got \(statusCode) POSTing to \(url)")
+                            }
+                        }
+                        
+                    case .failure(let error):
+                        switch error {
+                        case let urlError as URLError:
+                            urlError.failingURL.map { url in
+                                log.warning(#""\#(urlError.localizedDescription)" POSTing to \#(url)"#)
+                            }
+                        default: log.warning("\(error)")
                         }
                     }
                 },
