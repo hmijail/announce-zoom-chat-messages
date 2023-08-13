@@ -7,7 +7,14 @@ calls for each message detected.
 
 ## How do I run it?
 
-```sh
-swift run
+Build and run:
+```shell
+swift run -c release zoom-chat-event-publisher --destination-url (url to destination endpoint)
+```
+
+Build then run:
+```shell
+make
+.build/release/zoom-chat-event-publisher --destination-url (url to destination endpoint)
 ```
 
