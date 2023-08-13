@@ -9,7 +9,7 @@ struct ZoomChatEventPublisher {
     private let urlSession: URLSession = URLSession.shared
     let destinationURL: URLComponents
     
-    func logIfNil<T>(item: T?, message: String) -> T? {
+    func logIfNil<T>(_ item: T?, message: String) -> T? {
         if item == nil { log.info("\(message)") }
         return item
     }
@@ -27,9 +27,17 @@ struct ZoomChatEventPublisher {
         app.windows.first { $0.title == "Zoom Meeting" }
     }
     
+    func chatWindow(app: AXUIElement) -> AXUIElement? {
+        app.windows.first { $0.title == "Meeting Chat" }
+    }
+    
+    func anyMeetingWindow(app: AXUIElement) -> AXUIElement? {
+        chatWindow(app: app) ?? meetingWindow(app: app) ??
+        app.windows.first { $0.title?.starts(with: "zoom share") ?? false }
+    }
+    
     func windowChatTable(app: AXUIElement) -> AXUIElement? {
-        app.windows
-            .first { $0.title == "Meeting Chat" }?
+        chatWindow(app: app)?
             .uiElements.first { $0.role == kAXSplitGroupRole }?
             .uiElements.first { $0.role == kAXGroupRole }?
             .uiElements.first { $0.role == kAXScrollAreaRole }?
@@ -47,7 +55,7 @@ struct ZoomChatEventPublisher {
     func chatTable(app: AXUIElement) -> AXUIElement? {
         let chatTable: AXUIElement? = windowChatTable(app: app) ?? embeddedChatTable(app: app)
         if chatTable == nil {
-            log.info("Please Show Chat")
+            log.info("Chat not visible")
         }
         
         return chatTable
@@ -56,7 +64,10 @@ struct ZoomChatEventPublisher {
     func chatRows(app: AXUIElement) -> Observable<AXUIElement> {
         Observable<Int>
             .timer(.seconds(0), period: .seconds(1), scheduler: scheduler)
-            .take(while: { _ in meetingWindow(app: app) != nil }) // while meeting is ongoing
+            .take(while: { _ in
+                // meeting is ongoing
+                logIfNil(anyMeetingWindow(app: app), message: "Meeting ended") != nil
+            })
             .compactMap { _ in chatTable(app: app) }
             .scan((0, [])) { (accum: (Int, ArraySlice<AXUIElement>), table: AXUIElement) in
                 let (processedCount, _): (Int, _) = accum
@@ -101,10 +112,10 @@ struct ZoomChatEventPublisher {
         _ = Observable<Int>
             .timer(.seconds(0), period: .seconds(30), scheduler: scheduler)
             .compactMap { _ in
-                logIfNil(item: zoomApplication(), message: "Zoom not running")
+                logIfNil(zoomApplication(), message: "Zoom not running")
             }
-            .compactMap { app in
-                logIfNil(item: meetingWindow(app: app), message: "No meeting in progress").map { _ in app }
+            .filter { app in
+                logIfNil(anyMeetingWindow(app: app), message: "No meeting in progress") != nil
             }
             .flatMapFirst(chatRows)
             .flatMap { row in Observable.from(zoomUIChatTextFromRow(row: row)) }
@@ -171,7 +182,7 @@ struct ZoomChatEventPublisher {
                         }
                     }
                 },
-                onCompleted: { log.info("Meeting ended") }
+                onCompleted: { log.info("Terminated (should not happen)") }
             )
         
         RunLoop.current.run()
