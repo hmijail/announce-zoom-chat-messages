@@ -131,7 +131,7 @@ struct ZoomChatEventPublisher {
                 }
             }
             .compactMap { $0.1 }
-            .flatMap {
+            .concatMap {
                 var urlComps: URLComponents = destinationURL
                 urlComps.queryItems = [
                     URLQueryItem(name: "route", value: $0.route),
