@@ -115,7 +115,14 @@ struct ZoomChatEventPublisher {
                 logIfNil(zoomApplication(), message: "Zoom not running")
             }
             .filter { app in
-                logIfNil(anyMeetingWindow(app: app), message: "No meeting in progress") != nil
+                let meetingWindow: AXUIElement? = anyMeetingWindow(app: app)
+                if meetingWindow != nil {
+                    log.info("Meeting detected")
+                    return true
+                } else {
+                    log.info("No meeting in progress")
+                    return false
+                }
             }
             .flatMapFirst(chatRows)
             .flatMap { row in Observable.from(zoomUIChatTextFromRow(row: row)) }
