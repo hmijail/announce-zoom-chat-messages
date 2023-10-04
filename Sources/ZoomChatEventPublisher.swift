@@ -119,7 +119,7 @@ struct ZoomChatEventPublisher {
             }
             .flatMapFirst(chatRows)
             .do(
-                onNext: { log.debug("\($0.layoutDescription)") }
+                onNext: { log.debug("UI layout:\n\($0.layoutDescription)") }
             )
             .flatMap { row in Observable.from(zoomUIChatTextFromRow(row: row)) }
             .scan(
