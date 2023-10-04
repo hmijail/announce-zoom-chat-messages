@@ -13,12 +13,18 @@ struct Main: ParsableCommand {
     @Option(name: .shortAndLong, help: "The URL to publish chat messages to.")
     var destinationURL: URLComponents
     
+    @Flag(name: .shortAndLong, help: "More verbose logging.")
+    var verbose: Bool = false
+
     func run() {
         LoggingSystem.bootstrap { _ in
-            LoggingFormatAndPipe.Handler(
+            var handler: Handler = LoggingFormatAndPipe.Handler(
                 formatter: BasicFormatter.apple,
                 pipe: LoggerTextOutputStreamPipe.standardOutput
             )
+            handler.logLevel = verbose ? .debug : .info
+            
+            return handler
         }
         let publisher: ZoomChatEventPublisher = ZoomChatEventPublisher(
             destinationURL: destinationURL
