@@ -84,11 +84,13 @@ struct ZoomChatEventPublisher {
             case isMetadata
         }
         
+        // Run with -v/--verbose flag to see what each row looks like
+        // Note also that this may change with new versions of Zoom
         return row.uiElements.first?.uiElements
             .compactMap {
                 switch $0.role {
                 case kAXUnknownRole: return $0.value.map { .text(value: $0) }
-                case kAXStaticTextRole: return .isMetadata // Chat time - indicates next element is metadata
+                case kAXStaticTextRole: return .isMetadata // Chat time - indicates previous element is metadata
                 default: return nil
                 }
             }
