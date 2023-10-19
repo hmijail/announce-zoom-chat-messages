@@ -39,7 +39,6 @@ struct ZoomChatEventPublisher {
     func windowChatTable(app: AXUIElement) -> AXUIElement? {
         chatWindow(app: app)?
             .uiElements.first { $0.role == kAXSplitGroupRole }?
-            .uiElements.first { $0.role == kAXGroupRole }?
             .uiElements.first { $0.role == kAXScrollAreaRole }?
             .uiElements.first { $0.role == kAXTableRole }
     }
@@ -47,7 +46,6 @@ struct ZoomChatEventPublisher {
     func embeddedChatTable(app: AXUIElement) -> AXUIElement? {
         meetingWindow(app: app)?
             .uiElements.first { $0.role == kAXSplitGroupRole }?
-            .uiElements.first { $0.role == kAXGroupRole }?
             .uiElements.first { $0.role == kAXScrollAreaRole }?
             .uiElements.first { $0.role == kAXTableRole }
     }
@@ -121,7 +119,7 @@ struct ZoomChatEventPublisher {
             }
             .flatMapFirst(chatRows)
             .do(
-                onNext: { log.debug("UI layout:\n\($0.layoutDescription)") }
+                onNext: { log.debug("Chat rows layout:\n\($0.layoutDescription)") }
             )
             .flatMap { row in Observable.from(zoomUIChatTextFromRow(row: row)) }
             .scan(
