@@ -4,7 +4,7 @@ UPX := $(shell upx --version 2>/dev/null)
 .PHONY: clean build
 
 clean:
-	@rm .build/release
+	@rm -f .build/release
 	@rm -rf .build/x86_64-apple-macosx
 	@rm -rf .build/arm64-apple-macosx
 
