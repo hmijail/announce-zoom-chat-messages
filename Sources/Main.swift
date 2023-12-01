@@ -15,7 +15,7 @@ struct Main: ParsableCommand {
     
     @Flag(name: .shortAndLong, help: "More verbose logging.")
     var verbose: Bool = false
-
+    
     func run() {
         LoggingSystem.bootstrap { _ in
             var handler: Handler = LoggingFormatAndPipe.Handler(
@@ -30,5 +30,7 @@ struct Main: ParsableCommand {
             destinationURL: destinationURL
         )
         publisher.scrapeAndPublishChatMessages()
+        
+        RunLoop.current.run()
     }
 }

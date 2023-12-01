@@ -7,6 +7,7 @@ struct ZoomChatEventPublisher {
     private let log: Logger = Logger(label: "main")
     private let scheduler: SchedulerType = SerialDispatchQueueScheduler(qos: .default)
     private let urlSession: URLSession = URLSession.shared
+    private let disposeBag: DisposeBag = DisposeBag()
     let destinationURL: URLComponents
     
     func logIfNil<T>(_ item: T?, message: String) -> T? {
@@ -109,7 +110,7 @@ struct ZoomChatEventPublisher {
     func scrapeAndPublishChatMessages() {
         URLSession.rx.shouldLogRequest = { request in false }
         
-        _ = Observable<Int>
+        Observable<Int>
             .timer(.seconds(0), period: .seconds(30), scheduler: scheduler)
             .compactMap { _ in
                 logIfNil(zoomApplication(), message: "Zoom not running")
@@ -187,7 +188,6 @@ struct ZoomChatEventPublisher {
                 },
                 onCompleted: { log.info("Terminated (should not happen)") }
             )
-        
-        RunLoop.current.run()
+            .disposed(by: disposeBag)
     }
 }
