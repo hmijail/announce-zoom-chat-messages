@@ -51,7 +51,8 @@ struct ZoomChatEventPublisher {
             .uiElements.first { $0.role == kAXTableRole }
     }
     
-    func chatTable(app: AXUIElement) -> AXUIElement? {
+    // Due to how Zoom draws chats, this could be a chat table be in a mid-update state
+    func chatTableSnapshot(app: AXUIElement) -> AXUIElement? {
         let chatTable: AXUIElement? = windowChatTable(app: app) ?? embeddedChatTable(app: app)
         if chatTable == nil {
             log.info("Chat not visible")
@@ -60,6 +61,30 @@ struct ZoomChatEventPublisher {
         return chatTable
     }
     
+    // Returns the first two identical chatTableSnapshots
+    func chatTable(app: AXUIElement) -> Observable<AXUIElement> {
+        Observable<Int>
+            .timer(.seconds(0), period: .milliseconds(2), scheduler: scheduler)
+            .map { _ in chatTableSnapshot(app: app) }
+            .take(while: { $0 != nil })
+            .compactMap { $0 }
+            .scan(("", "", nil)) { (accum: (String, String, AXUIElement?), nextTable: AXUIElement) in
+                let (_, prevDescr, _): (String, String, AXUIElement?) = accum
+                
+                return (prevDescr, nextTable.layoutDescription, nextTable)
+            }
+            .skip(2)
+            .compactMap { (prevDescr: String, descr: String, table: AXUIElement?) in
+                if prevDescr == descr {
+                    return table
+                } else {
+                    log.info("Snapshotted chat table mid-update")
+                    return nil
+                }
+            }
+            .take(1)
+    }
+
     func chatRows(app: AXUIElement) -> Observable<AXUIElement> {
         Observable<Int>
             .timer(.seconds(0), period: .seconds(1), scheduler: scheduler)
@@ -67,7 +92,7 @@ struct ZoomChatEventPublisher {
                 // meeting is ongoing
                 logIfNil(anyMeetingWindow(app: app), message: "Meeting ended") != nil
             })
-            .compactMap { _ in chatTable(app: app) }
+            .flatMap { _ in chatTable(app: app) }
             .scan((0, [])) { (accum: (Int, ArraySlice<AXUIElement>), table: AXUIElement) in
                 let (processedCount, _): (Int, _) = accum
                 let newRows: ArraySlice<AXUIElement> = table.uiElements.dropFirst(processedCount)
