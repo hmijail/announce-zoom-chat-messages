@@ -3,7 +3,7 @@ import Logging
 import RxCocoa
 import RxSwift
 
-struct ZoomChatEventPublisher {
+struct ZoomChatPublisher {
     private let log: Logger = Logger(label: "main")
     private let scheduler: SchedulerType = SerialDispatchQueueScheduler(qos: .default)
     private let urlSession: URLSession = URLSession.shared

@@ -6,7 +6,7 @@ import LoggingFormatAndPipe
 @main
 struct Main: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "zoom-chat-event-publisher",
+        commandName: "zoom-chat-publisher",
         abstract: "Scrapes Zoom chat messages and publishes them to an HTTP endpoint."
     )
     
@@ -26,7 +26,7 @@ struct Main: ParsableCommand {
             
             return handler
         }
-        let publisher: ZoomChatEventPublisher = ZoomChatEventPublisher(
+        let publisher: ZoomChatPublisher = ZoomChatPublisher(
             destinationURL: destinationURL
         )
         publisher.scrapeAndPublishChatMessages()

@@ -12,10 +12,10 @@ build: clean
 	@swift build -c release --arch x86_64
 	@swift build -c release --arch arm64
 ifdef UPX
-	@upx .build/x86_64-apple-macosx/release/zoom-chat-event-publisher \
-	-o .build/x86_64-apple-macosx/release/zoom-chat-event-publisher-smol
-	@upx --brute .build/x86_64-apple-macosx/release/zoom-chat-event-publisher \
-	-o .build/x86_64-apple-macosx/release/zoom-chat-event-publisher-smoler
+	@upx .build/x86_64-apple-macosx/release/zoom-chat-publisher \
+	-o .build/x86_64-apple-macosx/release/zoom-chat-publisher-smol
+	@upx --brute .build/x86_64-apple-macosx/release/zoom-chat-publisher \
+	-o .build/x86_64-apple-macosx/release/zoom-chat-publisher-smoler
 else
 	@echo "Skipping UPX compression. To enable compression: brew install upx"
 endif
