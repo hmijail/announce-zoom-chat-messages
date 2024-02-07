@@ -1,4 +1,4 @@
-# Zoom Chat Event Publisher
+# Zoom Chat Publisher
 
 ## What is this?
 
