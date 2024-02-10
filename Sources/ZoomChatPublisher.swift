@@ -148,7 +148,7 @@ struct ZoomChatPublisher {
                     return chatRows(app: app)
                         .map { row -> Result<AXUIElement, ZoomChatPublisherError> in
                             guard let row = row else {
-                                return .failure(.chatNotVisible)
+                                return .failure(.chatNotOpen)
                             }
                             
                             os_log("Chat rows layout:\n%s", row.layoutDescription)

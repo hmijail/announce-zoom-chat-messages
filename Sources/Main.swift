@@ -67,8 +67,8 @@ struct Main: ParsableCommand {
                             log.info("Zoom not running")
                         case .noMeetingInProgress:
                             log.info("No meeting in progress")
-                        case .chatNotVisible:
-                            log.info("Chat not visible")
+                        case .chatNotOpen:
+                            log.info("Chat not open")
                         }
                     }
                 },
