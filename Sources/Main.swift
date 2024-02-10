@@ -2,6 +2,7 @@ import ArgumentParser
 import Foundation
 import Logging
 import LoggingFormatAndPipe
+import RxSwift
 
 @main
 struct Main: ParsableCommand {
@@ -26,10 +27,54 @@ struct Main: ParsableCommand {
             
             return handler
         }
+        let log: Logging.Logger = Logging.Logger(label: "main")
+        let disposeBag: DisposeBag = DisposeBag()
+        URLSession.rx.shouldLogRequest = { _ in false }
+        
         let publisher: ZoomChatPublisher = ZoomChatPublisher(
             destinationURL: destinationURL
         )
-        publisher.scrapeAndPublishChatMessages()
+        publisher
+            .scrapeAndPublishChatMessages()
+            .subscribe(
+                onNext: { (publishResult: Result<PublishAttempt, ZoomChatPublisherError>) in
+                    switch publishResult {
+                    case .success(let publish):
+                        switch publish.httpResponseResult {
+                        case .success(let response):
+                            let statusCode: Int = response.statusCode
+                            response.url.map { (url: URL) in
+                                if statusCode == 204 {
+                                    log.info("POSTed to \(url)")
+                                } else {
+                                    log.warning("Got \(statusCode) POSTing to \(url)")
+                                }
+                            }
+                            
+                        case .failure(let error):
+                            switch error {
+                            case let urlError as URLError:
+                                urlError.failingURL.map { (url: URL) in
+                                    log.warning(#""\#(urlError.localizedDescription)" POSTing to \#(url)"#)
+                                }
+                            default: log.warning("\(error)")
+                            }
+                        }
+                        
+                    case .failure(let error):
+                        switch error {
+                        case .zoomNotRunning:
+                            log.info("Zoom not running")
+                        case .noMeetingInProgress:
+                            log.info("No meeting in progress")
+                        case .chatNotVisible:
+                            log.info("Chat not visible")
+                        }
+                    }
+                },
+                onCompleted: { log.info("Terminated (should not happen)") }
+            )
+            .disposed(by: disposeBag)
         
         RunLoop.current.run()
     }
