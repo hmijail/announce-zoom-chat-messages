@@ -71,8 +71,7 @@ struct Main: ParsableCommand {
                             log.info("Chat not open")
                         }
                     }
-                },
-                onCompleted: { log.info("Terminated (should not happen)") }
+                }
             )
             .disposed(by: disposeBag)
         

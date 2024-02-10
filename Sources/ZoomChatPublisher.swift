@@ -212,5 +212,8 @@ struct ZoomChatPublisher {
                     return Observable.just(.failure(error))
                 }
             }
+            .do(
+                onCompleted: { os_log("Terminated (should not happen)", type: .fault) }
+            )
     }
 }
