@@ -1,5 +1,9 @@
 /// A single chat message
-struct ChatMessage {
+struct ChatMessage: CustomStringConvertible {
     let route: String
     let text: String
+    
+    var description: String {
+        return "\(route): \(text)"
+    }
 }

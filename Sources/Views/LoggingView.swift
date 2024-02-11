@@ -5,10 +5,10 @@ import Logging
 struct LoggingView: View {
     static let log: Logging.Logger = Logging.Logger(label: "main")
     
-    func render(_ publishAttemptResult: Result<PublishAttempt, ZoomChatPublisherError>) {
+    func render(_ publishAttemptResult: Result<Event, ZoomChatPublisherError>) {
         switch publishAttemptResult {
-        case .success(let publish):
-            switch publish.httpResponseResult {
+        case .success(.publishAttempt(_, let httpResponseResult)):
+            switch httpResponseResult {
             case .success(let response):
                 let statusCode: Int = response.statusCode
                 response.url.map { (url: URL) in
@@ -28,6 +28,9 @@ struct LoggingView: View {
                 default: Self.log.warning("\(error)")
                 }
             }
+            
+        case .success(.noOp):
+            break
             
         case .failure(let error):
             switch error {

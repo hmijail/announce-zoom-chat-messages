@@ -41,20 +41,28 @@ struct Main: ParsableCommand {
         let screen: Screen = Screen.shared
         screen.startUp(handler: Handler(screen))
         
+        let statusOkAttribute: Attribute
+        let statusBadAttribute: Attribute
         let successAttribute: Attribute
         let failureAttribute: Attribute
         let colors: Colors = Colors.shared
         if colors.areSupported {
             colors.startUp()
-            successAttribute = colors.newPair(foreground: .white, background: .green)
-            failureAttribute = colors.newPair(foreground: .white, background: .red)
+            statusOkAttribute = colors.newPair(foreground: .white, background: .green)
+            statusBadAttribute = colors.newPair(foreground: .white, background: .red)
+            successAttribute = colors.newPair(foreground: .green, background: .black)
+            failureAttribute = colors.newPair(foreground: .red, background: .black)
         } else {
-            successAttribute = Attribute.reverse
+            statusOkAttribute = Attribute.reverse
+            statusBadAttribute = Attribute.blink
+            successAttribute = Attribute.dim
             failureAttribute = Attribute.blink
         }
         
         let view: some View = CursesView(
-            screen: screen, successAttribute: successAttribute, failureAttribute: failureAttribute
+            screen: screen,
+            statusOkAttribute: statusOkAttribute, statusBadAttribute: statusBadAttribute,
+            successAttribute: successAttribute, failureAttribute: failureAttribute
         )
         publisher
             .scrapeAndPublishChatMessages()
