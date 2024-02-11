@@ -1,6 +1,15 @@
 {
   "pins" : [
     {
+      "identity" : "curses",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jackgene/Curses.git",
+      "state" : {
+        "revision" : "eaab23bdf129116176c6efd98a4193ed35c42c97",
+        "version" : "1.0.2"
+      }
+    },
+    {
       "identity" : "rxswift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ReactiveX/RxSwift.git",

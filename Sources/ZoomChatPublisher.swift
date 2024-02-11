@@ -49,9 +49,7 @@ struct ZoomChatPublisher {
     
     // Due to how Zoom draws chats, this could be a chat table be in a mid-update state
     private func chatTableSnapshot(app: AXUIElement) -> AXUIElement? {
-        let chatTable: AXUIElement? = windowChatTable(app: app) ?? embeddedChatTable(app: app)
-        
-        return chatTable
+        windowChatTable(app: app) ?? embeddedChatTable(app: app)
     }
     
     // Returns the first two identical chatTableSnapshots
@@ -131,7 +129,7 @@ struct ZoomChatPublisher {
     
     func scrapeAndPublishChatMessages() -> Observable<Result<PublishAttempt, ZoomChatPublisherError>> {
         Observable<Int>
-            .timer(.seconds(0), period: .seconds(5), scheduler: scheduler)
+            .timer(.seconds(0), period: .seconds(2), scheduler: scheduler)
             .map { _ -> Result<AXUIElement, ZoomChatPublisherError> in
                 guard let app = zoomApplication() else {
                     return .failure(.zoomNotRunning)
@@ -151,60 +149,82 @@ struct ZoomChatPublisher {
                                 return .failure(.chatNotOpen)
                             }
                             
-                            os_log("Chat rows layout:\n%s", row.layoutDescription)
+                            os_log("Chat rows layout:\n%{public}s", row.layoutDescription)
                             return .success(row)
                         }
                         .flatMap {
-                            switch $0 {
+                            (
+                                rowResult: Result<AXUIElement, ZoomChatPublisherError>
+                            ) -> Observable<Result<ZoomUIChatTextCell, ZoomChatPublisherError>>
+                            in
+                            
+                            switch rowResult {
                             case .success(let row):
                                 return Observable.from(zoomUIChatTextFromRow(row: row))
-                                    .scan(
-                                        ("Unknown to Unknown", nil)
-                                    ) { (accum: (String, ChatMessage?), nextCell: ZoomUIChatTextCell) in
-                                        let (route, _): (String, _) = accum
+                                    .map { .success($0) }
+                                
+                            case .failure(let error):
+                                return Observable.just(.failure(error))
+                            }
+                        }
+                        .scan(
+                            ("Unknown to Unknown", nil)
+                        ) { (
+                            accum: (String, Result<ChatMessage, ZoomChatPublisherError>?),
+                            nextCellResult: Result<ZoomUIChatTextCell, ZoomChatPublisherError>
+                        ) in
+                            let (route, _): (String, _) = accum
+                            switch nextCellResult {
+                            case .success(let nextCell):
+                                if nextCell.isRoute {
+                                    return (nextCell.text, nil)
+                                } else {
+                                    return (route, .success(ChatMessage(route: route, text: nextCell.text)))
+                                }
+                                
+                            case .failure(let error):
+                                return (route, .failure(error))
+                            }
+                        }
+                        .compactMap { $0.1 }
+                        .concatMap { (
+                            chatMessageResult: Result<ChatMessage, ZoomChatPublisherError>
+                        ) -> Observable<Result<PublishAttempt, ZoomChatPublisherError>> in
+                            switch chatMessageResult {
+                            case .success(let chatMessage):
+                                var urlComps: URLComponents = destinationURL
+                                urlComps.queryItems = [
+                                    URLQueryItem(name: "route", value: chatMessage.route),
+                                    URLQueryItem(name: "text", value: chatMessage.text)
+                                ]
+                                guard let url = urlComps.url else {
+                                    return Observable.never()
+                                }
+                                var urlRequest: URLRequest = URLRequest(url: url)
+                                urlRequest.httpMethod = "POST"
+                                
+                                return urlSession.rx.response(request: urlRequest)
+                                    .map { .success($0.response) }
+                                    .retry { (errors: Observable<Error>) in
+                                        // Retry with delay, inspired by:
+                                        // https://github.com/ReactiveX/RxSwift/issues/689#issuecomment-595117647
+                                        let maxAttempts: Int = 3
+                                        let delay: DispatchTimeInterval = .seconds(2)
                                         
-                                        if nextCell.isRoute {
-                                            return (nextCell.text, nil)
-                                        } else {
-                                            return (route, ChatMessage(route: route, text: nextCell.text))
-                                        }
+                                        return errors.enumerated()
+                                            .flatMap { (index: Int, error: Error) -> Observable<Int> in
+                                                index <= maxAttempts
+                                                ? Observable<Int>.timer(delay, scheduler: scheduler)
+                                                : Observable.error(error)
+                                            }
                                     }
-                                    .compactMap { $0.1 }
-                                    .concatMap { (chatMessage: ChatMessage) -> Observable<Result<PublishAttempt, ZoomChatPublisherError>> in
-                                        var urlComps: URLComponents = destinationURL
-                                        urlComps.queryItems = [
-                                            URLQueryItem(name: "route", value: chatMessage.route),
-                                            URLQueryItem(name: "text", value: chatMessage.text)
-                                        ]
-                                        guard let url = urlComps.url else {
-                                            return Observable.never()
-                                        }
-                                        var urlRequest: URLRequest = URLRequest(url: url)
-                                        urlRequest.httpMethod = "POST"
-                                        
-                                        return urlSession.rx.response(request: urlRequest)
-                                            .map { .success($0.response) }
-                                            .retry { (errors: Observable<Error>) in
-                                                // Retry with delay, inspired by:
-                                                // https://github.com/ReactiveX/RxSwift/issues/689#issuecomment-595117647
-                                                let maxAttempts: Int = 3
-                                                let delay: DispatchTimeInterval = .seconds(2)
-                                                
-                                                return errors.enumerated()
-                                                    .flatMap { (index: Int, error: Error) -> Observable<Int> in
-                                                        index <= maxAttempts
-                                                        ? Observable<Int>.timer(delay, scheduler: scheduler)
-                                                        : Observable.error(error)
-                                                    }
-                                            }
-                                            .catch { Observable.just(.failure($0)) }
-                                            .map {
-                                                .success(PublishAttempt(chatMessage: chatMessage, httpResponseResult: $0))
-                                            }
+                                    .catch { Observable.just(.failure($0)) }
+                                    .map {
+                                        .success(PublishAttempt(chatMessage: chatMessage, httpResponseResult: $0))
                                     }
                                 
-                            case .failure(let err):
-                                return Observable.just(.failure(err))
+                            case .failure(let error):
+                                return Observable.just(.failure(error))
                             }
                         }
                     
