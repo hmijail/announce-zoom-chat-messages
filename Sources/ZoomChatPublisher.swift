@@ -101,7 +101,7 @@ struct ZoomChatPublisher {
             case isMetadata
         }
         
-        // Run with -v/--verbose flag to see what each row looks like
+        // Look in macOS system log to see what each row looks like
         // Note also that this may change with new versions of Zoom
         return row.uiElements.first?.uiElements
             .compactMap {
